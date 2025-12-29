@@ -1,0 +1,25 @@
+# Python
+prepare_data.py
+*.pyc
+__pycache__/
+.venv/
+venv/
+
+# Node
+node_modules/
+.vercel/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

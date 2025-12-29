@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRAKA 360 // Data Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="dark">
+  <div class="app">
+    <header class="header">
+      <div class="header-left">
+        <h1>TRAKA 360</h1>
+        <span class="subtitle">Data Explorer</span>
+      </div>
+      <button class="theme-toggle" id="theme-toggle">
+        <span class="icon-sun">light</span>
+        <span class="icon-moon">dark</span>
+      </button>
+    </header>
+
+    <!-- AI Chat Section -->
+    <section class="ai-chat">
+      <div class="chat-header">
+        <span class="chat-label">Ask the Data</span>
+        <span class="chat-badge">Gemini</span>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <p class="chat-welcome">Ask anything about TRAKA 360 race data (2023-2025). Try questions like:</p>
+        <div class="quick-asks">
+          <button class="quick-ask" data-query="Who won in 2025?">Who won in 2025?</button>
+          <button class="quick-ask" data-query="Compare all three years">Compare all years</button>
+          <button class="quick-ask" data-query="Top 10 from Spain?">Top 10 from Spain?</button>
+          <button class="quick-ask" data-query="Who raced all 3 years?">Repeat finishers?</button>
+          <button class="quick-ask" data-query="Which clubs had the most finishers?">Top clubs?</button>
+        </div>
+      </div>
+      <div class="chat-input-wrapper">
+        <input type="text" class="chat-input" id="chat-input" placeholder="Ask about the race data...">
+        <button class="chat-send" id="chat-send">&rarr;</button>
+      </div>
+    </section>
+
+    <!-- Navigation -->
+    <nav class="tabs">
+      <button class="tab active" data-view="overview">Overview</button>
+      <button class="tab" data-view="years">By Year</button>
+      <button class="tab" data-view="demographics">Demographics</button>
+      <button class="tab" data-view="performers">Top Performers</button>
+      <button class="tab" data-view="clubs">Clubs</button>
+      <button class="tab" data-view="search">Search</button>
+    </nav>
+
+    <main class="main">
+      <!-- Overview View -->
+      <section class="view active" id="view-overview">
+        <div class="hero-stats">
+          <div class="stat-hero">
+            <span class="stat-value" id="stat-total">-</span>
+            <span class="stat-label">Total Finishers</span>
+            <span class="stat-sub">2023-2025</span>
+          </div>
+          <div class="stat-hero">
+            <span class="stat-value" id="stat-median">-</span>
+            <span class="stat-label">Median Time</span>
+            <span class="stat-sub">All years</span>
+          </div>
+          <div class="stat-hero highlight">
+            <span class="stat-value" id="stat-record">-</span>
+            <span class="stat-label">Course Record</span>
+            <span class="stat-sub" id="stat-record-holder">-</span>
+          </div>
+        </div>
+
+        <div class="insights-grid">
+          <div class="insight-card">
+            <h3>Getting Faster Every Year</h3>
+            <p class="insight-text" id="insight-faster">Loading...</p>
+          </div>
+          <div class="insight-card">
+            <h3>Participation Growing</h3>
+            <p class="insight-text" id="insight-growth">Loading...</p>
+          </div>
+          <div class="insight-card">
+            <h3>Repeat Racers</h3>
+            <p class="insight-text" id="insight-repeats">Loading...</p>
+          </div>
+        </div>
+
+        <div class="chart-section">
+          <h3>Year-over-Year Comparison</h3>
+          <div class="chart-container" style="height: 300px;">
+            <canvas id="chart-years"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-section">
+          <div class="chart-header">
+            <h3>Finish Time Distribution</h3>
+            <div class="chart-filter">
+              <select id="dist-year-filter" class="filter-select">
+                <option value="all">All Years</option>
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+              </select>
+            </div>
+          </div>
+          <div class="chart-container" style="height: 280px;">
+            <canvas id="chart-distribution"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Years View -->
+      <section class="view" id="view-years">
+        <div class="year-tabs">
+          <button class="year-tab" data-year="2023">2023</button>
+          <button class="year-tab" data-year="2024">2024</button>
+          <button class="year-tab active" data-year="2025">2025</button>
+        </div>
+
+        <div class="year-stats" id="year-stats">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="data-availability" id="data-availability">
+          <!-- Shows what data is available for selected year -->
+        </div>
+
+        <div class="two-col">
+          <div class="chart-section">
+            <h3>Top 10 Finishers</h3>
+            <div class="year-top-ten" id="year-top-ten">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <div class="chart-section">
+            <h3>Time Distribution</h3>
+            <div class="chart-container" style="height: 250px;">
+              <canvas id="chart-year-distribution"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-section">
+          <h3>Top Clubs (<span id="year-clubs-label">2025</span>)</h3>
+          <div class="chart-container" style="height: 250px;">
+            <canvas id="chart-year-clubs"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Demographics View -->
+      <section class="view" id="view-demographics">
+        <h2>Who Races the TRAKA?</h2>
+        <p class="view-desc">Demographics breakdown (nationality and age data available for 2025 only)</p>
+
+        <div class="demo-grid">
+          <div class="demo-card">
+            <h3>By Nationality <span class="data-badge">2025 only</span></h3>
+            <div class="chart-container small">
+              <canvas id="chart-nationality"></canvas>
+            </div>
+            <p class="chart-note">Top 10 countries by finisher count</p>
+          </div>
+          <div class="demo-card">
+            <h3>By Age Category <span class="data-badge">2025 only</span></h3>
+            <div class="chart-container small">
+              <canvas id="chart-age"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="age-band-table">
+          <h3>Age Band Performance <span class="data-badge">2025 only</span></h3>
+          <table class="data-table" id="age-band-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Finishers</th>
+                <th>Median</th>
+                <th>Fastest</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="nationality-table">
+          <h3>All Nationalities <span class="data-badge">2025 only</span></h3>
+          <div class="nationality-grid" id="nationality-grid">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Top Performers View -->
+      <section class="view" id="view-performers">
+        <h2>Top Performers</h2>
+        <p class="view-desc">Fastest finishers across all editions</p>
+
+        <div class="leaderboard">
+          <h3>All-Time Top 10</h3>
+          <table class="data-table" id="leaderboard-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Time</th>
+                <th>Year</th>
+                <th>Nat</th>
+                <th>Club</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="year-leaderboards">
+          <h3>Winners by Year</h3>
+          <div class="year-winners" id="year-winners">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <div class="category-leaders" id="category-leaders">
+          <h3>Age Category Leaders <span class="data-badge">2025 only</span></h3>
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="repeat-finishers">
+          <h3>Repeat Finishers</h3>
+          <p class="view-desc">Riders who completed multiple editions</p>
+          <div class="repeat-grid" id="repeat-grid">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Clubs View -->
+      <section class="view" id="view-clubs">
+        <h2>Club Representation</h2>
+        <p class="view-desc">Teams and clubs with the most finishers</p>
+
+        <div class="club-filter">
+          <select id="club-year-filter" class="filter-select">
+            <option value="all">All Years</option>
+            <option value="2023">2023</option>
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+          </select>
+        </div>
+
+        <div class="chart-section">
+          <div class="chart-container" style="height: 400px;">
+            <canvas id="chart-clubs"></canvas>
+          </div>
+        </div>
+
+        <div class="club-table">
+          <table class="data-table" id="club-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Club</th>
+                <th>Finishers</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Search View -->
+      <section class="view" id="view-search">
+        <h2>Search Results</h2>
+        <p class="view-desc">Find any finisher across all editions</p>
+
+        <div class="search-controls">
+          <input type="text" class="search-field" id="search-input" placeholder="Search by name or club...">
+          <select class="filter-select" id="filter-year">
+            <option value="">All Years</option>
+            <option value="2023">2023</option>
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+          </select>
+          <select class="filter-select" id="filter-nationality">
+            <option value="">All Nationalities (2025 only)</option>
+            <!-- Populated by JS -->
+          </select>
+        </div>
+
+        <p class="results-info">Showing <span id="results-count">0</span> results</p>
+
+        <div class="results-table-container">
+          <table class="data-table" id="results-table">
+            <thead>
+              <tr>
+                <th data-sort="rank"># &uarr;&darr;</th>
+                <th data-sort="name">Name &uarr;&darr;</th>
+                <th data-sort="time">Time &uarr;&darr;</th>
+                <th data-sort="year">Year &uarr;&darr;</th>
+                <th data-sort="nationality">Nat</th>
+                <th data-sort="club">Club</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <button class="btn-page" id="btn-prev">&larr; Prev</button>
+          <span id="page-info">Page 1 of 1</span>
+          <button class="btn-page" id="btn-next">Next &rarr;</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>TRAKA 360 Race Data Explorer</span>
+      <span class="separator">|</span>
+      <span>Data: 2023-2025</span>
+      <span class="separator">|</span>
+      <span>Source: TimingSense / Sportmaniacs</span>
+    </footer>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
