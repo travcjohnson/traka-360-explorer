@@ -18,6 +18,31 @@
   let distributionYear = 'all';
   let clubYear = 'all';
 
+  // ===== UTILITY FUNCTIONS =====
+  function timeToSeconds(timeStr) {
+    // Convert "HH:MM:SS" to total seconds
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length === 3) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
+    return 0;
+  }
+
+  function formatTimeDiff(seconds) {
+    // Format seconds difference as "Xh Ym Zs"
+    const sign = seconds >= 0 ? '' : '-';
+    const abs = Math.abs(seconds);
+    const h = Math.floor(abs / 3600);
+    const m = Math.floor((abs % 3600) / 60);
+    const s = abs % 60;
+    if (h > 0) {
+      return `${sign}${h}h ${m}m`;
+    } else if (m > 0) {
+      return `${sign}${m}m ${s}s`;
+    }
+    return `${sign}${s}s`;
+  }
+
   // ===== INITIALIZATION =====
   function init() {
     console.log('TRAKA 360 Data Explorer initialized');
@@ -477,9 +502,17 @@ ${topTenText}
 2025 Winner: ${DATA.topPerYear[2025][0].name} - ${DATA.topPerYear[2025][0].time} (Course Record)
 
 === REPEAT FINISHERS ===
-- ${repeatThreeYear.length} riders completed all 3 editions: ${repeatThreeYear.slice(0,10).map(r => r.name).join(', ')}
+- ${repeatThreeYear.length} riders completed all 3 editions
 - ${repeatTwoYear.length} riders completed 2 editions
 - Total ${DATA.repeatFinishers.length} riders finished multiple years
+
+=== DETAILED REPEAT FINISHER TIMES (for improvement analysis) ===
+${repeatThreeYear.map(r => {
+  const times = r.results.map(res => `${res.year}: ${res.time}`).join(', ');
+  return `${r.name}: ${times}`;
+}).join('\n')}
+
+To calculate "most improved": compare finish times between years. Lower time = better. Calculate difference between first and last year.
 
 === NATIONALITIES (2025 only - no nationality data for 2023/2024) ===
 Top countries: ${natBreakdown}
@@ -574,6 +607,35 @@ When answering questions:
       relevantResults = DATA.results.filter(r => r.year === 2024).slice(0, 20);
     } else if (q.includes('2025') && !q.includes('2023') && !q.includes('2024')) {
       relevantResults = DATA.results.filter(r => r.year === 2025).slice(0, 20);
+    }
+
+    // Check for improvement/progression queries
+    if (q.includes('improv') || q.includes('progress') || q.includes('better') || q.includes('faster')) {
+      const repeatFinishers = DATA.repeatFinishers.filter(r => r.count >= 2);
+      const improvements = repeatFinishers.map(r => {
+        const sorted = r.results.sort((a, b) => a.year - b.year);
+        const first = sorted[0];
+        const last = sorted[sorted.length - 1];
+        const firstSeconds = timeToSeconds(first.time);
+        const lastSeconds = timeToSeconds(last.time);
+        const improvement = firstSeconds - lastSeconds; // positive = improved
+        return {
+          name: r.name,
+          count: r.count,
+          firstYear: first.year,
+          firstTime: first.time,
+          lastYear: last.year,
+          lastTime: last.time,
+          improvementSeconds: improvement,
+          improvementFormatted: formatTimeDiff(improvement)
+        };
+      }).sort((a, b) => b.improvementSeconds - a.improvementSeconds);
+
+      return '\n\n=== RIDER IMPROVEMENT ANALYSIS ===\n' +
+        'Top 15 most improved riders (comparing first to last race):\n' +
+        improvements.slice(0, 15).map((r, i) =>
+          `${i+1}. ${r.name}: ${r.firstYear} (${r.firstTime}) → ${r.lastYear} (${r.lastTime}) = ${r.improvementFormatted} faster`
+        ).join('\n');
     }
 
     if (relevantResults.length > 0) {
